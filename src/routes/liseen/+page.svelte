@@ -16,7 +16,7 @@
 		}
 		loading = true;
 		response = 'Fetching Video';
-		const apiKey = 'AIzaSyCwtl1NYsKWIA1Fr1ZEUh171xMBE0maalI'; // Replace 'YOUR_API_KEY' with your actual YouTube Data API key
+		const apiKey = import.meta.env.VITE_PUBLIC_YT; // Replace 'YOUR_API_KEY' with your actual YouTube Data API key
 		const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${apiKey}`;
 
 		try {
