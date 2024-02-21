@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+	@font-face {
+		font-family: 'ibm';
+		src: url('/src/lib/font/IBMPlexSans-Regular.ttf') format('truetype');
+		/* Additional font properties can be added if needed */
+	}
+
+	@font-face {
+		font-family: 'ibm-bold';
+		src: url('/src/lib/font/IBMPlexSans-Bold.ttf') format('truetype');
+		/* Additional font properties can be added if needed */
+	}
+}
