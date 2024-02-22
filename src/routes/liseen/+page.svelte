@@ -1,10 +1,12 @@
 <script>
-	import { MoveRight, Pause, Play, Youtube, AudioLines } from 'lucide-svelte';
+	import { MoveRight, Pause, Play, Youtube, AudioLines, Loader2 } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 
 	// AIzaSyCwtl1NYsKWIA1Fr1ZEUh171xMBE0maalI
 
 	let loading;
 	let response;
+	let winWidth = 0;
 
 	async function getVideoTitle() {
 		const videoId = youtubeLink.match(
@@ -15,6 +17,7 @@
 			return;
 		}
 		loading = true;
+		player = false;
 		response = 'Fetching Video';
 		const apiKey = import.meta.env.VITE_PUBLIC_YT; // Replace 'YOUR_API_KEY' with your actual YouTube Data API key
 		const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${apiKey}`;
@@ -43,6 +46,7 @@
 	}
 
 	let player;
+	let buffering = false;
 	let playing = true;
 
 	function playVideoAsAudio() {
@@ -59,6 +63,8 @@
 			pauseAudio();
 			return;
 		}
+
+		buffering = true;
 		// Create a new HTML element for the YouTube player
 		const playerElement = document.createElement('div');
 		playerElement.id = 'player';
@@ -79,6 +85,10 @@
 				playsinline: 1, // Play inline on mobile devices
 				iv_load_policy: 3, // Hide video annotations
 				vq: 'medium'
+			},
+
+			events: {
+				onStateChange: onPlayerStateChange // Call onPlayerStateChange function when the player state changes
 			}
 		});
 
@@ -98,6 +108,27 @@
 			}
 		}
 	}
+
+	function onPlayerStateChange(event) {
+		if (event.data === YT.PlayerState.PLAYING) {
+			// console.log('Video is done buffering.');
+			buffering = false;
+			// Video is done buffering and started playing
+			// You can perform further actions here
+		}
+
+		// Listen for visibility change events
+
+		if (document.visibilityState === 'hidden') {
+			// Document is not visible (e.g., minimized)
+			player.playVideo();
+			console.log('Window is minimized or not visible');
+		} else {
+			// Document is visible
+			console.log('Window is visible');
+		}
+	}
+
 	// async function playVideoAsAudio() {
 	// 	const videoId = youtubeLink.match(
 	// 		/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -134,12 +165,40 @@
 	//             console.log('Failed to fetch video title.');
 	//         }
 	//     });
+
+	onMount(() => {
+		winWidth = window.innerWidth;
+
+		window.addEventListener('resize', () => {
+			winWidth = window.innerWidth;
+		});
+
+		// Listen for visibility change events
+		document.addEventListener('visibilitychange', function () {
+			if (document.visibilityState === 'hidden') {
+				// Document is not visible (e.g., minimized)
+				if (player) {
+					const playerState = player.getPlayerState();
+					if (playerState != YT.PlayerState.PLAYING && playing) {
+						player.playVideo();
+					}
+				}
+
+				console.log('Window is minimized or not visible');
+			} else {
+				// Document is visible
+				console.log('Window is visible');
+			}
+		});
+	});
 </script>
 
 <div class="flex flex-col md:flex-row min-h-screen">
-	<div class="w-full flex-1 bg-stone-800 text-black">
+	<div class="w-full p-6 md:flex-1 bg-stone-800 text-black">
 		<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
-			<AudioLines size={200} />
+			{#key winWidth}
+				<AudioLines size={winWidth * 0.2} />
+			{/key}
 			<h1 class="text-xl text-rose-200">Liseen</h1>
 		</div>
 	</div>
@@ -170,10 +229,14 @@
 							on:click={playVideoAsAudio}
 							class="bg-red-500 px-5 py-2 rounded-lg text-black w-fit"
 						>
-							{#if playing}
-								<Play />
+							{#if !buffering}
+								{#if playing}
+									<Pause />
+								{:else}
+									<Play />
+								{/if}
 							{:else}
-								<Pause />
+								<div class="animate-spin"><Loader2 /></div>
 							{/if}
 						</button>
 					{/if}
