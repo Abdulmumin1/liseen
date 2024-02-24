@@ -119,14 +119,14 @@
 
 		// Listen for visibility change events
 
-		if (document.visibilityState === 'hidden') {
-			// Document is not visible (e.g., minimized)
-			player.playVideo();
-			console.log('Window is minimized or not visible');
-		} else {
-			// Document is visible
-			console.log('Window is visible');
-		}
+		// if (document.visibilityState === 'hidden') {
+		// 	// Document is not visible (e.g., minimized)
+		// 	player.playVideo();
+		// 	console.log('Window is minimized or not visible');
+		// } else {
+		// 	// Document is visible
+		// 	console.log('Window is visible');
+		// }
 	}
 
 	// async function playVideoAsAudio() {
@@ -156,7 +156,8 @@
 	// const youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
 	// playVideoAudio(youtubeLink);
 
-	let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
+	// let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
+	let youtubeLink;
 	// getVideoTitle()
 	//     .then(title => {
 	//         if (title) {
@@ -194,7 +195,7 @@
 </script>
 
 <div class="flex flex-col md:flex-row min-h-screen">
-	<div class="w-full p-6 md:flex-1 bg-stone-800 text-black">
+	<div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
 		<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
 			{#key winWidth}
 				<AudioLines size={winWidth * 0.2} />
@@ -208,7 +209,8 @@
 				type="url"
 				on:submit={getVideoTitle}
 				bind:value={youtubeLink}
-				class="bg-stone-800 p-2 rounded-l-lg w-full"
+				placeholder="Video URL"
+				class="bg-stone-800 p-2 rounded-l-lg w-full text-sm"
 			/>
 			<button on:click={getVideoTitle} class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit"
 				><div>
