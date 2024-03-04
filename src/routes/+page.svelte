@@ -1,5 +1,5 @@
 <script>
-	import headPhone from '$lib/images/headphones.png';
+	import headPhone from '$lib/images/herooo.png';
 	import { MoveRightIcon, PlayIcon } from 'lucide-svelte';
 </script>
 
@@ -9,13 +9,13 @@
 		<h1 class="text-3xl md:text-6xl flex">
 			Listen to <div class="relative isolate">
 				<span
-					class="before:absolute before:w-full before:h-full before:block before:-z-10 before:skew-y-4 before:skew-x-4 text-black before:bg-red-600 -z-[1]"
+					class="before:absolute before:w-full before:h-full before:block before:-z-10 before:skew-y-3 before:skew-x-4 text-black before:bg-[#ffc200] -z-[1]"
 					>Youtube</span
 				>
 			</div>
 			Video
 		</h1>
-		<a href="/liseen" class="bg-red-600 rounded-xl w-fit px-5 py-3 flex gap-2 text-black"
+		<a href="/liseen" class="bg-[#ff4e44] rounded-xl w-fit px-5 py-3 flex gap-2 text-black"
 			>Start Listening <MoveRightIcon /></a
 		>
 	</div>

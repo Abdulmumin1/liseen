@@ -203,7 +203,7 @@
 			<h1 class="text-xl text-rose-200">Liseen</h1>
 		</div>
 	</div>
-	<div class="w-full flex-1 flex-col flex items-center justify-center gap-5">
+	<div class="w-full flex-1 flex-col flex md:items-center md:justify-center gap-5">
 		<div class="flex items-center justify-center gap-0 w-full p-4">
 			<input
 				type="url"
