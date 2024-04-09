@@ -1,12 +1,17 @@
 <script>
-	import { MoveRight, Pause, Play, Youtube, AudioLines, Loader2 } from 'lucide-svelte';
+	import { MoveRight, Pause, Play, Youtube, AudioLines, Loader2, ShapesIcon } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import Playcard from '../../lib/components/playcard.svelte';
+	import Visualizer from '../../lib/components/visualizer.svelte';
+	import { newState } from '$lib/index.js';
+	import { fly } from 'svelte/transition';
 
 	// AIzaSyCwtl1NYsKWIA1Fr1ZEUh171xMBE0maalI
 
 	let loading;
 	let response;
 	let winWidth = 0;
+	let videoInfo;
 
 	async function getVideoTitle() {
 		const videoId = youtubeLink.match(
@@ -27,8 +32,10 @@
 			const data = await res.json();
 
 			if (data.items && data.items.length > 0) {
+				videoInfo = data.items[0];
 				response = data.items[0].snippet;
 				loading = false;
+				newState.set(false);
 
 				return data.items[0].snippet.title;
 			} else {
@@ -88,6 +95,7 @@
 			},
 
 			events: {
+				onReady: onPlayerReady,
 				onStateChange: onPlayerStateChange // Call onPlayerStateChange function when the player state changes
 			}
 		});
@@ -109,12 +117,20 @@
 		}
 	}
 
+	let timelineInterval;
 	function onPlayerStateChange(event) {
 		if (event.data === YT.PlayerState.PLAYING) {
 			// console.log('Video is done buffering.');
 			buffering = false;
+
+			timelineInterval = setInterval(() => {
+				playedPercentage = (player.getCurrentTime() / duration) * 100;
+				console.log(playedPercentage);
+			}, 1000); // Update every second
 			// Video is done buffering and started playing
 			// You can perform further actions here
+		} else {
+			clearInterval(timelineInterval);
 		}
 
 		// Listen for visibility change events
@@ -129,6 +145,11 @@
 		// }
 	}
 
+	// $: {
+	// 	if (player && getPlayerState) {
+	// 		player.getDuration();
+	// 	}
+	// }
 	// async function playVideoAsAudio() {
 	// 	const videoId = youtubeLink.match(
 	// 		/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
@@ -167,6 +188,17 @@
 	//         }
 	//     });
 
+	let playedPercentage;
+	let duration;
+	function onPlayerReady(event) {
+		// Start updating the played percentage when the video is playing
+		duration = player.getDuration();
+		// setInterval(() => {
+		// 	playedPercentage = (player.getCurrentTime() / duration) * 100;
+		// 	console.log(playedPercentage);
+		// }, 1000); // Update every second
+	}
+
 	onMount(() => {
 		winWidth = window.innerWidth;
 
@@ -192,61 +224,85 @@
 			}
 		});
 	});
+
+	function seekToPercentage(percentage) {
+		percentage = percentage.detail.relativeMovement;
+		if (!player) return;
+
+		const duration = player.getDuration();
+		const time = (percentage / 100) * duration;
+		player.seekTo(time, true);
+	}
 </script>
 
-<div class="flex flex-col md:flex-row min-h-screen">
-	<div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
-		<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
-			{#key winWidth}
-				<AudioLines size={winWidth * 0.2} />
-			{/key}
-			<h1 class="text-xl text-rose-200">Liseen</h1>
-		</div>
-	</div>
-	<div class="w-full flex-1 flex-col flex md:items-center md:justify-center gap-5">
-		<div class="flex items-center justify-center gap-0 w-full p-4">
-			<input
-				type="url"
-				on:submit={getVideoTitle}
-				bind:value={youtubeLink}
-				placeholder="Video URL"
-				class="bg-stone-800 p-2 rounded-l-lg w-full text-sm"
-			/>
-			<button on:click={getVideoTitle} class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit"
-				><div>
-					<MoveRight />
-				</div></button
-			>
-		</div>
-
-		{#if loading || response}
-			<div class="w-full border-l-2 border-red-500 gap-2 p-2 bg-stone-900 flex flex-col">
-				<div class="flex justify-between items-center">
-					<div class="text-sm flex gap-1 items-center justify-center">
-						<Youtube />
-						{response?.title ?? response}
-					</div>
-					{#if response.title}
-						<button
-							on:click={playVideoAsAudio}
-							class="bg-red-500 px-5 py-2 rounded-lg text-black w-fit"
-						>
-							{#if !buffering}
-								{#if playing}
-									<Pause />
-								{:else}
-									<Play />
-								{/if}
-							{:else}
-								<div class="animate-spin"><Loader2 /></div>
-							{/if}
-						</button>
-					{/if}
-				</div>
-				{#if response.thumbnails}
-					<img src={response.thumbnails.high.url} alt="" srcset="" />
-				{/if}
+<div class="flex justify-center overflow-clip">
+	<div class="flex max-w-[30rem] w-full flex-col md:flex-row min-h-screen">
+		<!-- <div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
+			<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
+				{#key winWidth}
+					<AudioLines size={winWidth * 0.2} />
+				{/key}
+				<h1 class="text-xl text-rose-200">Liseen</h1>
 			</div>
-		{/if}
+		</div> -->
+		<div class="w-full flex-1 flex-col flex md:items-center justify-center gap-5">
+			{#if $newState}
+				<div class="flex items-center justify-center gap-0 w-full p-4" transition:fly={{ y: 300 }}>
+					<input
+						type="url"
+						on:submit={getVideoTitle}
+						bind:value={youtubeLink}
+						placeholder="Video URL"
+						class="bg-stone-800 p-2 rounded-l-lg w-full text-sm"
+					/>
+					<button
+						on:click={getVideoTitle}
+						class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit"
+						><div>
+							<MoveRight />
+						</div></button
+					>
+				</div>
+				{#if loading}
+					<div
+						class="w-full h-full absolute bg-stone-900 opacity-85 blur-3xl"
+						transition:fly={{ y: 300 }}
+					>
+						<div class="ds animate-pulse">
+							<ShapesIcon size={45} />
+						</div>
+					</div>
+				{/if}
+			{:else}
+				<!-- <Visualizer duration={videoInfo} /> -->
+
+				{#if response && videoInfo}
+					{#if videoInfo}
+						<Playcard {response} {playVideoAsAudio} bind:playing bind:buffering />
+						<!-- {#if player} -->
+						<!-- {/if} -->
+						<Visualizer
+							on:seek={(event) => seekToPercentage(event)}
+							bind:duration
+							bind:playedPercentage
+						/>
+					{:else}
+						203 not foud
+					{/if}
+				{/if}
+			{/if}
+		</div>
 	</div>
 </div>
+
+<style>
+	.ds {
+		position: absolute;
+		top: 50%; /* Position the top edge of the child element at the vertical center of the parent */
+		left: 50%; /* Position the left edge of the child element at the horizontal center of the parent */
+		transform: translate(
+			-50%,
+			-50%
+		); /* Use translate to adjust the position of the child element, moving it back by half its own width and height */
+	}
+</style>
