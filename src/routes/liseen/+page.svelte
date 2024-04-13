@@ -1,10 +1,11 @@
 <script>
 	import { MoveRight, Pause, Play, Youtube, AudioLines, Loader2, ShapesIcon } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount, setContext } from 'svelte';
 	import Playcard from '../../lib/components/playcard.svelte';
 	import Visualizer from '../../lib/components/visualizer.svelte';
 	import { newState } from '$lib/index.js';
 	import { fly } from 'svelte/transition';
+	import Recent from '../../lib/components/recent.svelte';
 
 	// AIzaSyCwtl1NYsKWIA1Fr1ZEUh171xMBE0maalI
 
@@ -13,8 +14,8 @@
 	let winWidth = 0;
 	let videoInfo;
 
-	async function getVideoTitle() {
-		const videoId = youtubeLink.match(
+	async function getVideoTitle(link) {
+		const videoId = link.match(
 			/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
 		)[1];
 
@@ -54,7 +55,7 @@
 
 	let player;
 	let buffering = false;
-	let playing = true;
+	let playing = false;
 
 	function playVideoAsAudio() {
 		const videoId = youtubeLink.match(
@@ -87,7 +88,7 @@
 			playerVars: {
 				autoplay: 1, // Auto-play the video
 				controls: 0, // Hide video controls
-				loop: 1, // Loop the video
+				loop: looping ? 0 : 1, // Loop the video
 				modestbranding: 1, // Hide YouTube logo
 				playsinline: 1, // Play inline on mobile devices
 				iv_load_policy: 3, // Hide video annotations
@@ -100,7 +101,7 @@
 			}
 		});
 
-		console.log(player);
+		// console.log(player);
 	}
 
 	function pauseAudio() {
@@ -118,20 +119,30 @@
 	}
 
 	let timelineInterval;
+	let looping;
 	function onPlayerStateChange(event) {
 		if (event.data === YT.PlayerState.PLAYING) {
 			// console.log('Video is done buffering.');
 			buffering = false;
+			playing = true;
 
 			timelineInterval = setInterval(() => {
 				playedPercentage = (player.getCurrentTime() / duration) * 100;
-				console.log(playedPercentage);
+				// console.log(playedPercentage);
 			}, 1000); // Update every second
 			// Video is done buffering and started playing
 			// You can perform further actions here
-		} else {
-			clearInterval(timelineInterval);
+			return;
+		} else if (event.data === YT.PlayerState.ENDED) {
+			// The video has finished playing
+			playing = false;
+			// You can perform additional actions here, such as looping the video or playing another video
+		} else if (event.data == YT.PlayerState.BUFFERING) {
+			playing = false;
+			buffering = true;
 		}
+
+		clearInterval(timelineInterval);
 
 		// Listen for visibility change events
 
@@ -177,8 +188,8 @@
 	// const youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
 	// playVideoAudio(youtubeLink);
 
-	// let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
-	let youtubeLink;
+	// let youtubeLink;
+	let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
 	// getVideoTitle()
 	//     .then(title => {
 	//         if (title) {
@@ -193,6 +204,7 @@
 	function onPlayerReady(event) {
 		// Start updating the played percentage when the video is playing
 		duration = player.getDuration();
+		playing = true;
 		// setInterval(() => {
 		// 	playedPercentage = (player.getCurrentTime() / duration) * 100;
 		// 	console.log(playedPercentage);
@@ -233,10 +245,27 @@
 		const time = (percentage / 100) * duration;
 		player.seekTo(time, true);
 	}
+
+	onDestroy(() => {
+		newState.set(true);
+	});
+
+	function toggleVideoLooping(event) {
+		let isLooping = event.detail.repeat;
+		// console.log(isLooping);
+		if (player) {
+			player.setLoop(isLooping);
+		} else {
+			looping = true;
+		}
+	}
+
+	// setContext('playing', playing)
+	// setContext{''}
 </script>
 
-<div class="flex justify-center overflow-clip">
-	<div class="flex max-w-[30rem] w-full flex-col md:flex-row min-h-screen">
+<div class="flex justify-center h-screen relative">
+	<div class="flex max-w-[30rem] w-full flex-col md:flex-row">
 		<!-- <div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
 			<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
 				{#key winWidth}
@@ -247,28 +276,30 @@
 		</div> -->
 		<div class="w-full flex-1 flex-col flex md:items-center justify-center gap-5">
 			{#if $newState}
-				<div class="flex items-center justify-center gap-0 w-full p-4" transition:fly={{ y: 300 }}>
-					<input
-						type="url"
-						on:submit={getVideoTitle}
-						bind:value={youtubeLink}
-						placeholder="Video URL"
-						class="bg-stone-800 p-2 rounded-l-lg w-full text-sm"
-					/>
-					<button
-						on:click={getVideoTitle}
-						class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit"
-						><div>
-							<MoveRight />
-						</div></button
+				<div class="box w-full">
+					<div
+						in:fly={{ y: 500 }}
+						class="flex card items-center justify-center gap-0 w-full p-[.8px]"
 					>
+						<input
+							type="url"
+							on:submit={getVideoTitle}
+							bind:value={youtubeLink}
+							placeholder="Video URL"
+							class="bg-stone-800 p-2 rounded-l-lg w-full text-sm border-2 border-stone-800 z-50"
+						/>
+						<button
+							on:click={() => getVideoTitle(youtubeLink)}
+							class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit z-50"
+							><div>
+								<MoveRight />
+							</div></button
+						>
+					</div>
 				</div>
 				{#if loading}
-					<div
-						class="w-full h-full absolute bg-stone-900 opacity-85 blur-3xl"
-						transition:fly={{ y: 300 }}
-					>
-						<div class="ds animate-pulse">
+					<div class="w-full h-full absolute bg-stone-900 opacity-85 blur-3xl">
+						<div class="ds animate-pulse relative z-20">
 							<ShapesIcon size={45} />
 						</div>
 					</div>
@@ -278,7 +309,14 @@
 
 				{#if response && videoInfo}
 					{#if videoInfo}
-						<Playcard {response} {playVideoAsAudio} bind:playing bind:buffering />
+						<Playcard
+							on:loop={toggleVideoLooping}
+							{response}
+							{youtubeLink}
+							{playVideoAsAudio}
+							bind:playing
+							bind:buffering
+						/>
 						<!-- {#if player} -->
 						<!-- {/if} -->
 						<Visualizer
@@ -293,6 +331,8 @@
 			{/if}
 		</div>
 	</div>
+
+	<Recent bind:playing bind:buffering bind:loading {getVideoTitle} bind:player bind:youtubeLink />
 </div>
 
 <style>
@@ -304,5 +344,85 @@
 			-50%,
 			-50%
 		); /* Use translate to adjust the position of the child element, moving it back by half its own width and height */
+	}
+
+	.box {
+		position: relative;
+		transform-style: preserve-3d;
+	}
+	.box::before {
+		content: '';
+		position: absolute;
+		inset: -20px;
+		background: conic-gradient(
+			from 90deg at 40% -25%,
+			#ffd700,
+			#f79d03,
+			#ee6907,
+			#e6390a,
+			#de0d0d,
+			#d61039,
+			#cf1261,
+			#c71585,
+			#cf1261,
+			#d61039,
+			#de0d0d,
+			#ee6907,
+			#f79d03,
+			#ffd700,
+			#ffd700,
+			#ffd700
+		);
+		filter: blur(80px);
+		transform: translate3d(0px, 0px, -1px);
+		left: 50%;
+		translate: -50% -30%;
+		border-radius: 100%;
+		height: 300px;
+		width: 300px;
+
+		pointer-events: none;
+	}
+	.card {
+		position: relative;
+
+		/* display: flex; */
+		/* justify-content: center; */
+		/* align-items: center; */
+		/* background-color: #000; */
+		border-radius: 8.5px;
+		overflow: hidden;
+		/* z-index: 10; */
+	}
+	.card::before,
+	.card.card::after {
+		content: '';
+		position: absolute;
+	}
+
+	.card::before {
+		width: 120%;
+		height: 110%;
+		background: linear-gradient(#e6390a, #f79d03);
+		animation: rotate 3s ease infinite;
+		z-index: 2;
+		/* rotate: 90deg; */
+		/* translate: 50%, 50%; */
+		/* left: 10px; */
+		transform-origin: left;
+		/* z-index: -1; */
+	}
+
+	/* .card::after {
+		inset: 4px;
+		background-color: black;
+		z-index: 2;
+		border-radius: 20px;
+	} */
+
+	@keyframes rotate {
+		to {
+			rotate: 360deg;
+		}
 	}
 </style>
