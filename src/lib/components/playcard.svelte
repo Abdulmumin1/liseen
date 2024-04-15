@@ -45,7 +45,7 @@
 	}
 </script>
 
-<div class="w-full gap-2 p-2 flex flex-col" transition:fly={{ y: 200 }}>
+<div class="w-full gap-2 p-2 flex flex-col" transition:fly={{ y: 300 }}>
 	<div class="text-sm flex gap-1 items-center justify-center">
 		<Youtube />
 		{response?.title ?? response}

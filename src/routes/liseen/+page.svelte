@@ -25,7 +25,7 @@
 		loading = true;
 		player = false;
 		response = 'Fetching Video';
-		const apiKey = import.meta.env.VITE_PUBLIC_YT; // Replace 'YOUR_API_KEY' with your actual YouTube Data API key
+		const apiKey = import.meta.env.VITE_PUBLIC_YT;
 		const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${apiKey}`;
 
 		try {
@@ -37,6 +37,7 @@
 				response = data.items[0].snippet;
 				loading = false;
 				newState.set(false);
+				// playVideoAsAudio()
 
 				return data.items[0].snippet.title;
 			} else {
@@ -188,8 +189,8 @@
 	// const youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
 	// playVideoAudio(youtubeLink);
 
-	// let youtubeLink;
-	let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
+	let youtubeLink;
+	// let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
 	// getVideoTitle()
 	//     .then(title => {
 	//         if (title) {
@@ -255,6 +256,7 @@
 		// console.log(isLooping);
 		if (player) {
 			player.setLoop(isLooping);
+			console.log('video will loop', isLooping);
 		} else {
 			looping = true;
 		}
@@ -264,7 +266,7 @@
 	// setContext{''}
 </script>
 
-<div class="flex justify-center h-screen relative">
+<div class="flex justify-center h-screen relative overflow-hidden">
 	<div class="flex max-w-[30rem] w-full flex-col md:flex-row">
 		<!-- <div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
 			<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
@@ -279,18 +281,18 @@
 				<div class="box w-full">
 					<div
 						in:fly={{ y: 500 }}
-						class="flex card items-center justify-center gap-0 w-full p-[.8px]"
+						class="flex card rounded-lg md:rounded-xl items-center justify-center gap-0 w-full p-[.1px] focus-within:border-red-500 focus-within:border"
 					>
 						<input
 							type="url"
 							on:submit={getVideoTitle}
 							bind:value={youtubeLink}
 							placeholder="Video URL"
-							class="bg-stone-800 p-2 rounded-l-lg w-full text-sm border-2 border-stone-800 z-50"
+							class="bg-stone-800 p-2 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
 						/>
 						<button
 							on:click={() => getVideoTitle(youtubeLink)}
-							class="bg-red-500 px-3 py-2 rounded-r-lg text-black w-fit z-50"
+							class="bg-red-500 px-3 py-2 md:py-4 rounded-r-lg md:rounded-r-xl text-black w-fit z-50"
 							><div>
 								<MoveRight />
 							</div></button
@@ -298,41 +300,42 @@
 					</div>
 				</div>
 				{#if loading}
-					<div class="w-full h-full absolute bg-stone-900 opacity-85 blur-3xl">
-						<div class="ds animate-pulse relative z-20">
-							<ShapesIcon size={45} />
-						</div>
+					<div
+						class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-stone-900 bg-opacity-75 z-50"
+					>
+						<div
+							class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-500"
+						></div>
 					</div>
 				{/if}
 			{:else}
 				<!-- <Visualizer duration={videoInfo} /> -->
 
-				{#if response && videoInfo}
-					{#if videoInfo}
-						<Playcard
-							on:loop={toggleVideoLooping}
-							{response}
-							{youtubeLink}
-							{playVideoAsAudio}
-							bind:playing
-							bind:buffering
-						/>
-						<!-- {#if player} -->
-						<!-- {/if} -->
-						<Visualizer
-							on:seek={(event) => seekToPercentage(event)}
-							bind:duration
-							bind:playedPercentage
-						/>
-					{:else}
-						203 not foud
-					{/if}
+				{#if response && response?.title}
+					<!-- {#if videoInfo} -->
+					<Playcard
+						on:loop={toggleVideoLooping}
+						{response}
+						{youtubeLink}
+						{playVideoAsAudio}
+						bind:playing
+						bind:buffering
+					/>
+					<!-- {#if player} -->
+					<!-- {/if} -->
+					<Visualizer
+						on:seek={(event) => seekToPercentage(event)}
+						bind:duration
+						bind:playedPercentage
+					/>
 				{/if}
 			{/if}
 		</div>
 	</div>
 
+	<!-- {#key loading} -->
 	<Recent bind:playing bind:buffering bind:loading {getVideoTitle} bind:player bind:youtubeLink />
+	<!-- {/key} -->
 </div>
 
 <style>
@@ -390,7 +393,7 @@
 		/* justify-content: center; */
 		/* align-items: center; */
 		/* background-color: #000; */
-		border-radius: 8.5px;
+		/* border-radius: 8.5px; */
 		overflow: hidden;
 		/* z-index: 10; */
 	}

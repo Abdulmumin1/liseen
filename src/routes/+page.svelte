@@ -1,11 +1,18 @@
 <script>
 	import headPhone from '$lib/images/herooo.png';
-	import { Columns2, MoveRightIcon, VideoOffIcon, DatabaseIcon, SettingsIcon } from 'lucide-svelte';
+	import {
+		Columns2,
+		MoveRightIcon,
+		VideoOffIcon,
+		DatabaseIcon,
+		SettingsIcon,
+		ShieldBan
+	} from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 </script>
 
 <div transition:fly={{ y: -500 }} class="min-h-screen flex flex-col items-center justify-center">
-	<div class="flex flex-col gap-4 items-center justify-center">
+	<div class="flex flex-col gap-4 items-center justify-center h-screen md:h-fit">
 		<img src={headPhone} alt="" srcset="" />
 		<h1 class="text-3xl md:text-6xl flex">
 			Listen to <div class="relative isolate">
@@ -43,7 +50,7 @@
 						Listen to your favorite podcasts, music, tutorials, or audiobooks while working,
 						exercising, or commuting. <span
 							class="italic underline decoration-wavy decoration-red-500">Liseen</span
-						> seamlessly integrates with your daily routine.
+						> keeps the audio playing in background.
 					</p>
 				</div>
 				<div class="bg-[#ffc200] rounded-lg shadow-lg p-6 flex flex-col items-center">
@@ -57,19 +64,21 @@
 					</p>
 				</div>
 				<div class="bg-[#ffc200] rounded-lg shadow-lg p-6 flex flex-col items-center">
-					<SettingsIcon size="48" class="text-red-500 mb-4" />
-					<h3 class="text-xl font-semibold mb-2 text-black">Customizable Playback</h3>
+					<!-- <SettingsIcon size="48" class="text-red-500 mb-4" /> -->
+					<ShieldBan size="48" class="text-red-500 mb-4" />
+					<h3 class="text-xl font-semibold mb-2 text-black">Ads Free</h3>
 					<p class="text-gray-800 text-center">
-						enable background playback. <span
-							class="italic underline decoration-wavy decoration-red-500">Liseen</span
-						> puts you in charge of your audio experience.
+						Enjoy your favorite content 100% free from ads interrupt.
 					</p>
 				</div>
 			</div>
 		</div>
 	</section>
 
-	<footer class="mb-5">&copy; Abdulmumin Yaqeen 2024</footer>
+	<footer class="mb-5">
+		From <a href="https://yaqeen.me" class="text-[#ffc200]" target="_blank">Abdulmumin Yaqeen</a> &copy;
+		2024
+	</footer>
 </div>
 
 <style>

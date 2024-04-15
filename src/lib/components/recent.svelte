@@ -1,6 +1,9 @@
 <script>
-	import { HistoryIcon, PanelRightClose, PanelRightOpen, Play, Trash, X } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { fly } from 'svelte/transition';
+	import { HistoryIcon, PanelRightClose, PanelRightOpen, Play, Trash, X } from 'lucide-svelte';
+	import { saveToLocalStorage, key, readFromLocalStorage } from '$lib/index.js';
 
 	let open = false;
 
@@ -13,9 +16,6 @@
 		setTimeout(() => (sfs = true), 400);
 		open = false;
 	}
-
-	import { saveToLocalStorage, key, readFromLocalStorage } from '$lib/index.js';
-	import { onMount } from 'svelte';
 
 	function clearRecent() {
 		recent = [];
@@ -40,7 +40,41 @@
 		getVideoTitle(link);
 	}
 
+	// $: {
+	// 	let l = loading;
+	// 	if (browser) {
+	// 		recent = readFromLocalStorage(key) ?? [];
+	// 	}
+	// }
+
 	let sfs = true;
+
+	function formatDate(date) {
+		date = new Date(date);
+		const months = [
+			'Jan',
+			'Feb',
+			'Mar',
+			'Apr',
+			'May',
+			'Jun',
+			'Jul',
+			'Aug',
+			'Sep',
+			'Oct',
+			'Nov',
+			'Dec'
+		];
+		const month = months[date.getMonth()];
+		const day = date.getDate();
+		const hours = date.getHours();
+		const minutes = date.getMinutes();
+		const ampm = hours >= 12 ? 'pm' : 'am';
+		const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+		const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+		return `${month} ${day}, ${formattedHours}:${formattedMinutes} ${ampm}`;
+	}
 </script>
 
 <div class="absolute center z-50 left-1 flex flex-col">
@@ -55,9 +89,14 @@
 				</div>
 				<div class="flex flex-col flex-1 gap-1 overflow-auto bg-stone-900 rounded-b-lg">
 					{#each recent as r}
+						<div class="text-[10px]">
+							{formatDate(r.date)}
+							<!-- {r.date} -->
+						</div>
 						<div class="p-2 bg-stone-800 text-sm flex justify-between">
 							{r.title}
 							<!-- {r.url} -->
+
 							<button
 								on:click={() => {
 									play(r.url);
