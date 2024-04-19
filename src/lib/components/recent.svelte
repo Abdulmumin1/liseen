@@ -30,6 +30,8 @@
 	export let playing, buffering, getVideoTitle, loading, player, youtubeLink;
 
 	function play(link) {
+		closeRecent();
+
 		playing = false;
 		buffering = false;
 		loading = true;

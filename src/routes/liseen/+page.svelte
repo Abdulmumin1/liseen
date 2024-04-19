@@ -137,6 +137,11 @@
 		} else if (event.data === YT.PlayerState.ENDED) {
 			// The video has finished playing
 			playing = false;
+			if (looping) {
+				player.seekTo(0, true);
+				player.playVideo();
+				// console.log('sekkfd safd osafdafdoanfd');
+			}
 			// You can perform additional actions here, such as looping the video or playing another video
 		} else if (event.data == YT.PlayerState.BUFFERING) {
 			playing = false;
@@ -253,12 +258,11 @@
 
 	function toggleVideoLooping(event) {
 		let isLooping = event.detail.repeat;
+		looping = isLooping;
 		// console.log(isLooping);
 		if (player) {
 			player.setLoop(isLooping);
-			console.log('video will loop', isLooping);
-		} else {
-			looping = true;
+			// console.log('video will loop', isLooping);
 		}
 	}
 
@@ -277,6 +281,15 @@
 			</div>
 		</div> -->
 		<div class="w-full flex-1 flex-col flex md:items-center justify-center gap-5">
+			{#if loading}
+				<div
+					class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-stone-900 bg-opacity-75 z-50"
+				>
+					<div
+						class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-500"
+					></div>
+				</div>
+			{/if}
 			{#if $newState}
 				<div class="box w-full">
 					<div
@@ -298,16 +311,16 @@
 							</div></button
 						>
 					</div>
+
+					<!-- <div class="flex items-center justify-center gap-2 mt-5">
+						<button class="bg-red-500 text-black text-sm px-3 py-2 rounded-md"
+							>recent playlist</button
+						>
+						<button class="bg-red-500 text-black text-sm px-3 py-2 rounded-md"
+							>import playlist</button
+						>
+					</div> -->
 				</div>
-				{#if loading}
-					<div
-						class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-stone-900 bg-opacity-75 z-50"
-					>
-						<div
-							class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-500"
-						></div>
-					</div>
-				{/if}
 			{:else}
 				<!-- <Visualizer duration={videoInfo} /> -->
 
