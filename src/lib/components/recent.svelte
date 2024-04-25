@@ -1,9 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	import { fly } from 'svelte/transition';
-	import { HistoryIcon, PanelRightClose, PanelRightOpen, Play, Trash, X } from 'lucide-svelte';
-	import { saveToLocalStorage, key, readFromLocalStorage } from '$lib/index.js';
+	import { HistoryIcon, PanelRightOpen, Play, Trash, X } from 'lucide-svelte';
+	import { saveToLocalStorage, key, readFromLocalStorage, clickOutside } from '$lib/index.js';
 
 	let open = false;
 
@@ -81,7 +80,13 @@
 
 <div class="absolute center z-50 left-1 flex flex-col">
 	{#if open}
-		<div transition:fly={{ x: -100 }} class="h-[380px] w-[220px] flex">
+		<div
+			use:clickOutside
+			on:click_outside={closeRecent}
+			in:fly={{ x: -100 }}
+			out:fly={{ x: -200 }}
+			class="h-[380px] w-[220px] flex"
+		>
 			<div class="flex flex-col w-full">
 				<div class="flex justify-between text-black rounded-t-lg bg-red-500">
 					<h4 class=" flex p-2 gap-2"><HistoryIcon /> Recent</h4>

@@ -1,13 +1,13 @@
 <script>
-	import { MoveRight, Pause, Play, Youtube, AudioLines, Loader2, ShapesIcon } from 'lucide-svelte';
-	import { onDestroy, onMount, setContext } from 'svelte';
-	import Playcard from '../../lib/components/playcard.svelte';
-	import Visualizer from '../../lib/components/visualizer.svelte';
-	import { newState } from '$lib/index.js';
 	import { fly } from 'svelte/transition';
-	import Recent from '../../lib/components/recent.svelte';
+	import { onDestroy, onMount } from 'svelte';
 
-	// AIzaSyCwtl1NYsKWIA1Fr1ZEUh171xMBE0maalI
+	import { MoveRight } from 'lucide-svelte';
+
+	import Playcard from '$lib/components/playcard.svelte';
+	import Recent from '$lib/components/recent.svelte';
+	import Visualizer from '$lib/components/visualizer.svelte';
+	import { newState } from '$lib/index.js';
 
 	let loading;
 	let response;
@@ -129,7 +129,6 @@
 
 			timelineInterval = setInterval(() => {
 				playedPercentage = (player.getCurrentTime() / duration) * 100;
-				// console.log(playedPercentage);
 			}, 1000); // Update every second
 			// Video is done buffering and started playing
 			// You can perform further actions here
@@ -140,70 +139,16 @@
 			if (looping) {
 				player.seekTo(0, true);
 				player.playVideo();
-				// console.log('sekkfd safd osafdafdoanfd');
 			}
-			// You can perform additional actions here, such as looping the video or playing another video
 		} else if (event.data == YT.PlayerState.BUFFERING) {
 			playing = false;
 			buffering = true;
 		}
 
 		clearInterval(timelineInterval);
-
-		// Listen for visibility change events
-
-		// if (document.visibilityState === 'hidden') {
-		// 	// Document is not visible (e.g., minimized)
-		// 	player.playVideo();
-		// 	console.log('Window is minimized or not visible');
-		// } else {
-		// 	// Document is visible
-		// 	console.log('Window is visible');
-		// }
 	}
 
-	// $: {
-	// 	if (player && getPlayerState) {
-	// 		player.getDuration();
-	// 	}
-	// }
-	// async function playVideoAsAudio() {
-	// 	const videoId = youtubeLink.match(
-	// 		/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-	// 	)[1];
-	// 	const apiUrl = `https://www.youtube.com/get_video_info?video_id=${videoId}`;
-
-	// 	try {
-	// 		const response = await fetch(apiUrl);
-	// 		const data = await response.text();
-
-	// 		// Parse the response to extract audio stream URL
-	// 		const decodedData = decodeURIComponent(data);
-	// 		const audioURL = decodedData.match(/url_encoded_fmt_stream_map=(.*)/)[1].split(',')[0];
-	// 		const audioStreamURL = decodeURIComponent(audioURL.match(/url=(.*)/)[1]);
-
-	// 		// Create an HTML5 audio element and play the audio stream
-	// 		const audioElement = new Audio(audioStreamURL);
-	// 		audioElement.play();
-	// 	} catch (error) {
-	// 		console.error('Error fetching audio stream:', error);
-	// 	}
-	// }
-
-	// Example usage:
-	// const youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
-	// playVideoAudio(youtubeLink);
-
 	let youtubeLink;
-	// let youtubeLink = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; // Example YouTube video link
-	// getVideoTitle()
-	//     .then(title => {
-	//         if (title) {
-	//             console.log('Video title:', title);
-	//         } else {
-	//             console.log('Failed to fetch video title.');
-	//         }
-	//     });
 
 	let playedPercentage;
 	let duration;
@@ -211,10 +156,6 @@
 		// Start updating the played percentage when the video is playing
 		duration = player.getDuration();
 		playing = true;
-		// setInterval(() => {
-		// 	playedPercentage = (player.getCurrentTime() / duration) * 100;
-		// 	console.log(playedPercentage);
-		// }, 1000); // Update every second
 	}
 
 	onMount(() => {
@@ -270,61 +211,42 @@
 	// setContext{''}
 </script>
 
-<div class="flex justify-center h-screen relative overflow-hidden">
-	<div class="flex max-w-[30rem] w-full flex-col md:flex-row">
-		<!-- <div class="w-full p-6 md:flex-1 md:bg-stone-800 text-black">
-			<div class="h-full w-full text-red-500 flex flex-col items-center justify-center">
-				{#key winWidth}
-					<AudioLines size={winWidth * 0.2} />
-				{/key}
-				<h1 class="text-xl text-rose-200">Liseen</h1>
-			</div>
-		</div> -->
-		<div class="w-full flex-1 flex-col flex md:items-center justify-center gap-5">
-			{#if loading}
-				<div
-					class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-stone-900 bg-opacity-75 z-50"
-				>
+<div class="flex justify-center h-screen overflow-hidden">
+	<div class="max-w-5xl flex relative justify-center w-full">
+		<div class="flex max-w-[30rem] w-full flex-col md:flex-row">
+			<div class="w-full flex-1 flex-col flex md:items-center justify-center gap-5">
+				{#if loading}
 					<div
-						class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-500"
-					></div>
-				</div>
-			{/if}
-			{#if $newState}
-				<div class="box w-full">
-					<div
-						in:fly={{ y: 500 }}
-						class="flex card rounded-lg md:rounded-xl items-center justify-center gap-0 w-full p-[.1px] focus-within:border-red-500 focus-within:border"
+						class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-stone-900 bg-opacity-75 z-50"
 					>
-						<input
-							type="url"
-							on:submit={getVideoTitle}
-							bind:value={youtubeLink}
-							placeholder="Video URL"
-							class="bg-stone-800 p-2 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
-						/>
-						<button
-							on:click={() => getVideoTitle(youtubeLink)}
-							class="bg-red-500 px-3 py-2 md:py-4 rounded-r-lg md:rounded-r-xl text-black w-fit z-50"
-							><div>
-								<MoveRight />
-							</div></button
-						>
+						<div
+							class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-red-500"
+						></div>
 					</div>
-
-					<!-- <div class="flex items-center justify-center gap-2 mt-5">
-						<button class="bg-red-500 text-black text-sm px-3 py-2 rounded-md"
-							>recent playlist</button
+				{/if}
+				{#if $newState}
+					<div class="box w-full">
+						<div
+							in:fly={{ y: 500 }}
+							class="flex card rounded-lg md:rounded-xl items-center justify-center gap-0 w-full focus-within:border-2 border-red-500 border"
 						>
-						<button class="bg-red-500 text-black text-sm px-3 py-2 rounded-md"
-							>import playlist</button
-						>
-					</div> -->
-				</div>
-			{:else}
-				<!-- <Visualizer duration={videoInfo} /> -->
-
-				{#if response && response?.title}
+							<input
+								type="url"
+								on:submit={getVideoTitle}
+								bind:value={youtubeLink}
+								placeholder="Video URL"
+								class="bg-stone-800 p-2 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
+							/>
+							<button
+								on:click={() => getVideoTitle(youtubeLink)}
+								class="bg-red-500 px-3 py-2 md:py-4 rounded-r-md md:rounded-r-lg text-black w-fit z-50"
+								><div>
+									<MoveRight />
+								</div></button
+							>
+						</div>
+					</div>
+				{:else if response && response?.title}
 					<!-- {#if videoInfo} -->
 					<Playcard
 						on:loop={toggleVideoLooping}
@@ -342,26 +264,16 @@
 						bind:playedPercentage
 					/>
 				{/if}
-			{/if}
+			</div>
 		</div>
+		<Recent bind:playing bind:buffering bind:loading {getVideoTitle} bind:player bind:youtubeLink />
 	</div>
 
 	<!-- {#key loading} -->
-	<Recent bind:playing bind:buffering bind:loading {getVideoTitle} bind:player bind:youtubeLink />
 	<!-- {/key} -->
 </div>
 
 <style>
-	.ds {
-		position: absolute;
-		top: 50%; /* Position the top edge of the child element at the vertical center of the parent */
-		left: 50%; /* Position the left edge of the child element at the horizontal center of the parent */
-		transform: translate(
-			-50%,
-			-50%
-		); /* Use translate to adjust the position of the child element, moving it back by half its own width and height */
-	}
-
 	.box {
 		position: relative;
 		transform-style: preserve-3d;
@@ -402,13 +314,7 @@
 	.card {
 		position: relative;
 
-		/* display: flex; */
-		/* justify-content: center; */
-		/* align-items: center; */
-		/* background-color: #000; */
-		/* border-radius: 8.5px; */
 		overflow: hidden;
-		/* z-index: 10; */
 	}
 	.card::before,
 	.card.card::after {
@@ -422,19 +328,9 @@
 		background: linear-gradient(#e6390a, #f79d03);
 		animation: rotate 3s ease infinite;
 		z-index: 2;
-		/* rotate: 90deg; */
-		/* translate: 50%, 50%; */
-		/* left: 10px; */
-		transform-origin: left;
-		/* z-index: -1; */
-	}
 
-	/* .card::after {
-		inset: 4px;
-		background-color: black;
-		z-index: 2;
-		border-radius: 20px;
-	} */
+		transform-origin: left;
+	}
 
 	@keyframes rotate {
 		to {

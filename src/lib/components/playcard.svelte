@@ -53,7 +53,13 @@
 	{#if response.thumbnails}
 		<div class="relative">
 			<div class="blub relative">
-				<img src={response.thumbnails.high.url} alt="" srcset="" class="relative z-10 rounded-xl" />
+				<img
+					src={response.thumbnails.high.url}
+					style="background-image: url({response.thumbnails.default.url}); height:360px;"
+					alt=""
+					srcset=""
+					class="relative z-10 rounded-xl"
+				/>
 			</div>
 		</div>
 	{/if}
