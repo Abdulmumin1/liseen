@@ -13,18 +13,8 @@
 
 <div transition:fly={{ y: -500 }} class="min-h-screen flex flex-col items-center justify-center">
 	<div class="flex flex-col gap-4 items-center justify-center h-screen md:h-fit">
-		<img src={headPhone} alt="" srcset="" /><a
-			class="my-3"
-			href="https://www.producthunt.com/posts/liseen?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-liseen"
-			target="_blank"
-			><img
-				src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=453895&theme=dark"
-				alt="Liseen - Listen&#0032;to&#0032;YouTube&#0032;videos&#0032;as&#0032;audio | Product Hunt"
-				style="width: 250px; height: 54px;"
-				width="250"
-				height="54"
-			/></a
-		>
+		<img src={headPhone} alt="" srcset="" />
+
 		<h1 class="text-3xl md:text-6xl flex">
 			Listen to <div class="relative isolate">
 				<span
