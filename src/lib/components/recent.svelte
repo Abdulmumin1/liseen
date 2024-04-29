@@ -14,6 +14,7 @@
 	function closeRecent() {
 		setTimeout(() => (sfs = true), 400);
 		open = false;
+		recent = readFromLocalStorage(key) ?? [];
 	}
 
 	function clearRecent() {
@@ -113,23 +114,23 @@
 						</div>
 					{/each}
 				</div>
-				<button
+				<!-- <button
 					on:click={closeRecent}
 					class="flex gap-1 h-fit rounded-r-lg bg-red-500 w-fit p-2 text-black"
 				>
 					<X />
 
 					<span>Recents</span>
-				</button>
+				</button> -->
 			</div>
 		</div>
 	{:else if sfs}
 		<button
 			in:fly={{ x: -100 }}
 			on:click={openRecent}
-			class="flex fixed top-0 flex-col gap-1 rounded-r-lg bg-red-500 w-fit p-2 text-black"
+			class="flex fixed top-0 flex-col items-center justify-center gap-1 rounded-r-lg bg-red-500 w-fit p-2 text-black text-base"
 		>
-			<PanelRightOpen />
+			<PanelRightOpen size={18} />
 			<span class="d">Recents</span>
 		</button>
 	{/if}

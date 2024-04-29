@@ -7,7 +7,11 @@
 	import Playcard from '$lib/components/playcard.svelte';
 	import Recent from '$lib/components/recent.svelte';
 	import Visualizer from '$lib/components/visualizer.svelte';
-	import { newState } from '$lib/index.js';
+	import { newState, setToast, getToast } from '$lib/index.js';
+	import Toast from '$lib/components/toast.svelte';
+	setToast(null);
+
+	let toast = getToast();
 
 	let loading;
 	let response;
@@ -15,13 +19,24 @@
 	let videoInfo;
 
 	async function getVideoTitle(link) {
-		const videoId = link.match(
-			/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-		)[1];
+		let videoId;
+		try {
+			videoId = link.match(
+				/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+			)[1];
 
-		if (!videoId) {
+			if (!videoId) {
+				let message = 'Invalid YouTube Link :/';
+				$toast = { message };
+
+				return;
+			}
+		} catch (error) {
+			let message = 'Invalid YouTube Link :/';
+			$toast = { message };
 			return;
 		}
+
 		loading = true;
 		player = false;
 		response = 'Fetching Video';
@@ -41,8 +56,9 @@
 
 				return data.items[0].snippet.title;
 			} else {
-				response = 'Video not found';
+				response = 'Video not found :/';
 				loading = false;
+				$toast = { message: response };
 
 				throw new Error('Video not found');
 			}
@@ -226,13 +242,12 @@
 				{/if}
 				{#if $newState}
 					<div class="box w-full">
-						<div
+						<form
 							in:fly={{ y: 500 }}
 							class="flex card rounded-lg md:rounded-xl items-center justify-center gap-0 w-full focus-within:border-2 border-red-500 border"
 						>
 							<input
 								type="url"
-								on:submit={getVideoTitle}
 								bind:value={youtubeLink}
 								placeholder="Video URL"
 								class="bg-stone-800 p-2 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
@@ -244,7 +259,7 @@
 									<MoveRight />
 								</div></button
 							>
-						</div>
+						</form>
 					</div>
 				{:else if response && response?.title}
 					<!-- {#if videoInfo} -->
@@ -256,8 +271,6 @@
 						bind:playing
 						bind:buffering
 					/>
-					<!-- {#if player} -->
-					<!-- {/if} -->
 					<Visualizer
 						on:seek={(event) => seekToPercentage(event)}
 						bind:duration
@@ -271,6 +284,10 @@
 
 	<!-- {#key loading} -->
 	<!-- {/key} -->
+
+	{#if $toast}
+		<Toast />
+	{/if}
 </div>
 
 <style>

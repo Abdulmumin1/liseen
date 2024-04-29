@@ -1,5 +1,6 @@
 // place files you want to import through the `$lib` alias in this folder.
 
+import { getContext, setContext } from 'svelte';
 import { writable } from 'svelte/store';
 
 export let newState = writable(true);
@@ -12,6 +13,16 @@ export function saveToLocalStorage(key, data) {
 export function readFromLocalStorage(key) {
 	const data = localStorage.getItem(key);
 	return JSON.parse(data);
+}
+
+let toastKey = 'recents';
+
+export function setToast(data) {
+	setContext(toastKey, writable(data));
+}
+
+export function getToast() {
+	return getContext(toastKey);
 }
 
 /** Dispatch event on click outside of node */
