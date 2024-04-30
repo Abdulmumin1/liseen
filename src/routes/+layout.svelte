@@ -13,7 +13,7 @@
 	<!-- Facebook Meta Tags -->
 	<meta property="og:url" content="https://liseen.vercel.app" />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="Liseen" />
+	<meta property="og:title" content="Liseen - Stream YouTube Videos / Playlist as Audio" />
 	<meta
 		property="og:description"
 		content="Listen to youtube videos as audio - for music, podcasts and others."
