@@ -137,7 +137,7 @@
 	onMount(() => {
 		coords.subscribe((current) => {
 			// if ()
-			if (!isDragging && !wait) {
+			if (!isDragging && !wait && playedPercentage <= 100) {
 				thumb.style.left = `${playedPercentage}%`;
 				// console.log('updated');
 			} else {
