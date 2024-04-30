@@ -365,6 +365,9 @@
 							>
 						</form>
 					</div>
+					<div class=" w-full h-full">
+						<Visualizer />
+					</div>
 				{:else if response && response?.title}
 					{#if $playlist}
 						<!-- {#if videoInfo} -->

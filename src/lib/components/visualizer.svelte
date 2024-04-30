@@ -1,31 +1,9 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
 	export let duration, playedPercentage, buffering;
-	// createEventDispatcher
+
 	import { spring } from 'svelte/motion';
 	import { fly } from 'svelte/transition';
-
-	function extractDuration(videoInfo) {
-		if (videoInfo && videoInfo.contentDetails && videoInfo.contentDetails.duration) {
-			return parseISO8601Duration(videoInfo.contentDetails.duration);
-		} else {
-			return null;
-		}
-	}
-
-	// Parse ISO 8601 duration format (e.g., PT4M13S)
-	function parseISO8601Duration(duration) {
-		if (!duration) {
-			return;
-		}
-		const match = duration.match(/^PT(\d+H)?(\d+M)?(\d+S)?$/);
-
-		const hours = (match[1] ? parseInt(match[1]) : 0) || 0;
-		const minutes = (match[2] ? parseInt(match[2]) : 0) || 0;
-		const seconds = (match[3] ? parseInt(match[3]) : 0) || 0;
-
-		return hours * 3600 + minutes * 60 + seconds;
-	}
 
 	let rangeSlider;
 	let thumb;
@@ -44,6 +22,7 @@
 		relativeMovement = ((newPos - initialThumbPositionX) / rangeSlider.offsetWidth) * 100;
 		dispatch('seek', { relativeMovement });
 	}
+
 	function handleMouseMove(e) {
 		if (isDragging && !wait) {
 			// console.log('touch jdsj');
@@ -91,7 +70,7 @@
 			let newPos;
 			let stepSize = 2;
 
-			console.log(parseInt(thumb.style.left.replace('px')));
+			// console.log(parseInt(thumb.style.left.replace('px')));
 
 			switch (e.key) {
 				case 'ArrowLeft':
@@ -107,16 +86,20 @@
 					newPos = 0;
 					break;
 				case 'End':
-					newPos = rangeSlider.offsetWidth;
+					newPos = rangeSlider.offsetWidth - 2;
 					break;
 				default:
 					return;
 			}
 
-			thumb.style.left = newPos + 'px';
 			relativeMovement = ((newPos - initialThumbPositionX) / rangeSlider.offsetWidth) * 100;
-			// dispatch()
-			dispatch('seek', { relativeMovement });
+
+			if (parseInt(relativeMovement) < 100) {
+				// console.log(relativeMovement);
+				thumb.style.left = newPos + 'px';
+				// dispatch()
+				dispatch('seek', { relativeMovement });
+			}
 		}
 	}
 
@@ -165,7 +148,7 @@
 	bind:this={rangeSlider}
 	aria-valuemin="0"
 	aria-valuemax="100"
-	aria-valuenow="50"
+	aria-valuenow={playedPercentage}
 	role="slider"
 	on:keydown={handleKeyDown}
 	tabindex="0"
@@ -240,7 +223,6 @@
 		position: absolute;
 		background-color: rgb(110, 22, 22);
 		right: 0;
-		/* opacity: 0.9; */
 		width: 1000px;
 		height: 100%;
 		mix-blend-mode: darken;
