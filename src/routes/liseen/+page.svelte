@@ -353,7 +353,7 @@
 							<input
 								type="url"
 								bind:value={youtubeLink}
-								placeholder="Video URL"
+								placeholder="Video / Playlist URL"
 								class="bg-stone-800 p-2 py-4 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
 							/>
 							<button
@@ -364,9 +364,6 @@
 								</div></button
 							>
 						</form>
-					</div>
-					<div class=" w-full h-full">
-						<Visualizer />
 					</div>
 				{:else if response && response?.title}
 					{#if $playlist}
