@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
-	export let duration, playedPercentage;
+	export let duration, playedPercentage, buffering;
 	// createEventDispatcher
 	import { spring } from 'svelte/motion';
 	import { fly } from 'svelte/transition';
@@ -36,14 +36,22 @@
 
 	const dispatch = createEventDispatcher();
 
+	function click(e) {
+		const posX = e.clientX - rangeSlider.getBoundingClientRect().left;
+		const newPos = Math.min(Math.max(posX, 0), rangeSlider.offsetWidth);
+		thumb.style.left = newPos + 'px';
+
+		relativeMovement = ((newPos - initialThumbPositionX) / rangeSlider.offsetWidth) * 100;
+		dispatch('seek', { relativeMovement });
+	}
 	function handleMouseMove(e) {
-		if (isDragging) {
+		if (isDragging && !wait) {
 			// console.log('touch jdsj');
 			const posX = e.clientX - rangeSlider.getBoundingClientRect().left;
 			const newPos = Math.min(Math.max(posX, 0), rangeSlider.offsetWidth);
 			thumb.style.left = newPos + 'px';
 			//   $track.style.width = newPos + 'px';
-			console.log(newPos);
+			// console.log(newPos);
 			relativeMovement = ((newPos - initialThumbPositionX) / rangeSlider.offsetWidth) * 100;
 		}
 	}
@@ -52,7 +60,7 @@
 		e.preventDefault(); // Prevent default touch event behavior
 		const posX = e.touches[0].clientX - rangeSlider.getBoundingClientRect().left;
 		const newPos = Math.min(Math.max(posX, 0), rangeSlider.offsetWidth);
-		if (isDragging) {
+		if (isDragging && !wait) {
 			thumb.style.left = newPos + 'px';
 		} else {
 			coords.update(() => {
@@ -64,15 +72,63 @@
 
 	function handleMouseDown() {
 		isDragging = true;
-		console.log('thouch ');
+		wait = false;
 	}
 
+	let wait = false;
+
 	function handleMouseup() {
-		isDragging = false;
-		console.log(relativeMovement);
 		dispatch('seek', { relativeMovement });
+		if (buffering) {
+			wait = true;
+			return;
+		}
+		isDragging = false;
 	}
-	let a = 'end';
+
+	function handleKeyDown(e) {
+		if (!wait) {
+			let newPos;
+			let stepSize = 2;
+
+			console.log(parseInt(thumb.style.left.replace('px')));
+
+			switch (e.key) {
+				case 'ArrowLeft':
+					newPos = Math.max(parseInt(thumb.style.left.replace('px')) - stepSize, 0);
+					break;
+				case 'ArrowRight':
+					newPos = Math.min(
+						parseInt(thumb.style.left.replace('px')) + stepSize,
+						rangeSlider.offsetWidth
+					);
+					break;
+				case 'Home':
+					newPos = 0;
+					break;
+				case 'End':
+					newPos = rangeSlider.offsetWidth;
+					break;
+				default:
+					return;
+			}
+
+			thumb.style.left = newPos + 'px';
+			relativeMovement = ((newPos - initialThumbPositionX) / rangeSlider.offsetWidth) * 100;
+			// dispatch()
+			dispatch('seek', { relativeMovement });
+		}
+	}
+
+	$: {
+		if (wait & !buffering) {
+			console.log(buffering);
+			isDragging = false;
+			wait = false;
+		}
+	}
+
+	// $: console.log('done buffeting', buffering);
 
 	const coords = spring({
 		x: 0,
@@ -82,23 +138,41 @@
 	onMount(() => {
 		coords.subscribe((current) => {
 			// if ()
-			if (!isDragging) {
+			if (!isDragging && !wait) {
 				thumb.style.left = `${current.x}px`;
+			} else {
+				thumb.style.left = `${playedPercentage}%`;
 			}
 		});
 	});
-	// $: {
-	// 	a = parseISO8601Duration(duration);
-	// }
+
+	function formatDuration(durationInSeconds) {
+		const hours = Math.floor(durationInSeconds / 3600);
+		const minutes = Math.floor((durationInSeconds % 3600) / 60);
+		const seconds = durationInSeconds % 60;
+
+		const formattedHours = hours > 0 ? `${hours}h` : '';
+		const formattedMinutes = `${minutes.toString().padStart(2, '0')}m`;
+		const formattedSeconds = `${seconds.toString().padStart(2, '0')}s`;
+
+		return `${formattedHours} ${formattedMinutes} ${formattedSeconds}`.trim();
+	}
 </script>
 
 <!-- <div class="absolute z-50 bottom-0"> -->
 <div
 	class=" af w-full flex relative h-fit text-black"
 	bind:this={rangeSlider}
+	aria-valuemin="0"
+	aria-valuemax="100"
+	aria-valuenow="50"
+	role="slider"
+	on:keydown={handleKeyDown}
+	tabindex="0"
 	on:mousemove={handleMouseMove}
 	on:touchmove={handleTouchMove}
 	transition:fly={{ y: 200, delay: 100 }}
+	on:click={click}
 >
 	<!-- <span class="d absolute bottom-0">0:00</span> -->
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"
@@ -112,23 +186,25 @@
 		bind:this={thumb}
 		class="thumb"
 		role="slider"
+		tabindex="0"
+		aria-valuenow={playedPercentage}
 		on:mousedown={handleMouseDown}
 		on:mouseup={handleMouseup}
 		on:touchstart={handleMouseDown}
 		on:touchend={handleMouseup}
-		style="left: {isDragging ? $coords.x : playedPercentage}%;"
 	></div>
-	<!-- <span class="d absolute right-0 bottom-0">{a}</span> -->
+	<!-- style="left: {isDragging && !wait ? $coords.x : playedPercentage}%;" -->
+	<span class="text-[11px] text-red-950 mx-1 select-none absolute right-0 bottom-0"
+		>{formatDuration(duration)}</span
+	>
 </div>
 
 <!-- </div> -->
 
 <style>
-	.d {
-		writing-mode: vertical-lr;
-		padding: 1px;
+	.af {
+		overflow: hidden;
 	}
-
 	.thumb {
 		width: 2px;
 		background-color: #efc744;
@@ -138,22 +214,36 @@
 		/* left: 10px; */
 		cursor: pointer;
 		transition: all ease 100ms;
+		/* overflow: hidden; */
 	}
 
 	.thumb:hover {
-		transform: scaleX(2);
+		/* transform: scaleX(2); */
 	}
 
 	.thumb::before {
 		content: '';
 		width: 0;
 		height: 0;
-		border-left: 5px solid transparent;
-		border-right: 5px solid transparent;
-		border-top: 10px solid #ef4444;
+		border-left: 0px solid transparent;
+		border-right: 7px solid transparent;
+		border-top: 12px solid #ef4444;
 		/* transform: rotate(deg); */
 		position: absolute;
 		top: 0;
-		left: -4px;
+		left: 0px;
+	}
+
+	/* width: 500%; */
+	.thumb::after {
+		content: '';
+		position: absolute;
+		background-color: rgb(110, 22, 22);
+		right: 0;
+		/* opacity: 0.9; */
+		width: 1000px;
+		height: 100%;
+		mix-blend-mode: darken;
+		overflow: hidden;
 	}
 </style>

@@ -1,6 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { onDestroy, onMount } from 'svelte';
+	import { getContext, onDestroy, onMount, setContext } from 'svelte';
 
 	import { MoveRight } from 'lucide-svelte';
 
@@ -9,22 +9,92 @@
 	import Visualizer from '$lib/components/visualizer.svelte';
 	import { newState, setToast, getToast } from '$lib/index.js';
 	import Toast from '$lib/components/toast.svelte';
+	import { writable } from 'svelte/store';
+	import PlayListPlayer from '../../lib/components/playListPlayer.svelte';
 	setToast(null);
+	setContext('playlist', writable(false));
+	setContext('currently_playing', writable(false));
 
 	let toast = getToast();
+
+	let playlist = getContext('playlist');
+	let currently_playing = getContext('currently_playing');
 
 	let loading;
 	let response;
 	let winWidth = 0;
 	let videoInfo;
 
+	async function getPlaylistVideos(playlistId, apiKey) {
+		try {
+			const videoIds = [];
+			let nextPageToken = '';
+			let playlistDetails = null;
+
+			// Fetch playlist details
+			const playlistResponse = await fetch(
+				`https://www.googleapis.com/youtube/v3/playlists?` +
+					`part=snippet` +
+					`&id=${playlistId}` +
+					`&key=${apiKey}`
+			);
+
+			if (playlistResponse.ok) {
+				const playlistData = await playlistResponse.json();
+				playlistDetails = playlistData.items[0].snippet;
+			} else {
+				throw new Error(`HTTP error ${playlistResponse.status}`);
+			}
+
+			// Fetch playlist items
+			do {
+				const response = await fetchPlaylistItems(playlistId, apiKey, nextPageToken);
+				videoIds.push(...response.items.map((item) => item.contentDetails.videoId));
+				nextPageToken = response.nextPageToken || '';
+			} while (nextPageToken);
+
+			return { playlistDetails, videoIds };
+		} catch (error) {
+			console.error('Error fetching playlist details:', error);
+			throw error;
+		}
+	}
+
+	async function fetchPlaylistItems(playlistId, apiKey, pageToken = '') {
+		const response = await fetch(
+			`https://www.googleapis.com/youtube/v3/playlistItems?` +
+				`part=contentDetails` +
+				`&maxResults=50` +
+				`&playlistId=${playlistId}` +
+				`&key=${apiKey}` +
+				`${pageToken ? `&pageToken=${pageToken}` : ''}`
+		);
+
+		if (!response.ok) {
+			throw new Error(`HTTP error ${response.status}`);
+		}
+
+		const data = await response.json();
+		loading = false;
+		newState.set(false);
+		return data;
+	}
+
+	function extractPlaylistId(link) {
+		const playlistIdRegex =
+			/(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:playlist\?list=|watch\?(?:.+&)?list=)([\w-]+)/;
+		const match = link.match(playlistIdRegex);
+		return match ? match[1] : null;
+	}
+
 	async function getVideoTitle(link) {
+		$playlist = false;
 		let videoId;
+
 		try {
 			videoId = link.match(
-				/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+				/(?:https?:\/\/)?(?:www\.|m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([^&?\/]{11})/
 			)[1];
-
 			if (!videoId) {
 				let message = 'Invalid YouTube Link :/';
 				$toast = { message };
@@ -32,15 +102,52 @@
 				return;
 			}
 		} catch (error) {
-			let message = 'Invalid YouTube Link :/';
-			$toast = { message };
-			return;
+			try {
+				videoId = extractPlaylistId(link);
+
+				if (!videoId) {
+					let message = 'Invalid YouTube Link :/';
+					$toast = { message };
+
+					return;
+				}
+
+				$playlist = true;
+			} catch (e) {
+				let message = 'Invalid YouTube Link :/';
+				$toast = { message };
+				return;
+			}
 		}
 
 		loading = true;
 		player = false;
 		response = 'Fetching Video';
+
 		const apiKey = import.meta.env.VITE_PUBLIC_YT;
+
+		if (!$playlist) {
+			await fetchVideo(videoId);
+		} else {
+			$playlist = await getPlaylistVideos(videoId, apiKey);
+			// $currently_playing = $playlist.videoIds[0];
+
+			// console.log($currently_playing);
+			// playVideoAsAudio($currently_playing);
+			fetchVideo($playlist.videoIds[0]);
+		}
+	}
+
+	let player;
+	let buffering = false;
+	let playing = false;
+
+	async function fetchVideo(videoId) {
+		const apiKey = import.meta.env.VITE_PUBLIC_YT;
+		playing = false;
+		buffering = false;
+		clearInterval(timelineInterval);
+		playedPercentage = 0;
 		const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${apiKey}`;
 
 		try {
@@ -52,7 +159,9 @@
 				response = data.items[0].snippet;
 				loading = false;
 				newState.set(false);
-				// playVideoAsAudio()
+				$currently_playing = videoId;
+
+				playVideoAsAudio(videoId);
 
 				return data.items[0].snippet.title;
 			} else {
@@ -70,26 +179,9 @@
 		}
 	}
 
-	let player;
-	let buffering = false;
-	let playing = false;
+	function playVideoAsAudio(videoId) {
+		document.getElementById('player')?.remove();
 
-	function playVideoAsAudio() {
-		const videoId = youtubeLink.match(
-			/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-		)[1];
-
-		if (!videoId) {
-			response = 'Invalid Video';
-			return;
-		}
-
-		if (player) {
-			pauseAudio();
-			return;
-		}
-
-		buffering = true;
 		// Create a new HTML element for the YouTube player
 		const playerElement = document.createElement('div');
 		playerElement.id = 'player';
@@ -103,7 +195,7 @@
 			width: '00', // Set width to 0 to hide the video player
 			videoId: videoId, // Use the extracted video ID
 			playerVars: {
-				autoplay: 1, // Auto-play the video
+				autoplay: 0, // Auto-play the video
 				controls: 0, // Hide video controls
 				loop: looping ? 0 : 1, // Loop the video
 				modestbranding: 1, // Hide YouTube logo
@@ -121,7 +213,7 @@
 		// console.log(player);
 	}
 
-	function pauseAudio() {
+	function playAudio() {
 		if (player && player.getPlayerState) {
 			const playerState = player.getPlayerState();
 			if (playerState === YT.PlayerState.PLAYING) {
@@ -137,6 +229,7 @@
 
 	let timelineInterval;
 	let looping;
+
 	function onPlayerStateChange(event) {
 		if (event.data === YT.PlayerState.PLAYING) {
 			// console.log('Video is done buffering.');
@@ -155,6 +248,21 @@
 			if (looping) {
 				player.seekTo(0, true);
 				player.playVideo();
+			} else if ($playlist && $currently_playing) {
+				// const index = (element) => element == $currently_playing;
+				let current_index = $playlist.videoIds.indexOf($currently_playing);
+				// console.log($currently_playing, current_index);
+				let next_index = current_index + 1;
+				next_index = $playlist.videoIds.indexOf($playlist.videoIds[next_index]);
+				// console.log(next);
+
+				if (next_index > -1) {
+					let nex = $playlist.videoIds[next_index];
+					fetchVideo(nex).then(() => {
+						playAudio();
+					});
+					// playVideoAsAudio(videoId)
+				}
 			}
 		} else if (event.data == YT.PlayerState.BUFFERING) {
 			playing = false;
@@ -168,10 +276,11 @@
 
 	let playedPercentage;
 	let duration;
+
 	function onPlayerReady(event) {
 		// Start updating the played percentage when the video is playing
 		duration = player.getDuration();
-		playing = true;
+		// playing = true;
 	}
 
 	onMount(() => {
@@ -216,11 +325,6 @@
 	function toggleVideoLooping(event) {
 		let isLooping = event.detail.repeat;
 		looping = isLooping;
-		// console.log(isLooping);
-		if (player) {
-			player.setLoop(isLooping);
-			// console.log('video will loop', isLooping);
-		}
 	}
 
 	// setContext('playing', playing)
@@ -241,20 +345,20 @@
 					</div>
 				{/if}
 				{#if $newState}
-					<div class="box w-full">
+					<div class="box w-full md:max-w-full flex items-center justify-center">
 						<form
 							in:fly={{ y: 500 }}
-							class="flex card rounded-lg md:rounded-xl items-center justify-center gap-0 w-full focus-within:border-2 border-red-500 border"
+							class="flex card rounded-lg max-w-[90%] md:max-w-full md:rounded-xl items-center justify-center gap-0 w-full focus-within:border-2 border-red-500 border"
 						>
 							<input
 								type="url"
 								bind:value={youtubeLink}
 								placeholder="Video URL"
-								class="bg-stone-800 p-2 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
+								class="bg-stone-800 p-2 py-4 md:p-4 rounded-l-lg md:rounded-l-xl w-full text-sm border-2 border-stone-800 z-50 focus:outline-none"
 							/>
 							<button
 								on:click={() => getVideoTitle(youtubeLink)}
-								class="bg-red-500 px-3 py-2 md:py-4 rounded-r-md md:rounded-r-lg text-black w-fit z-50"
+								class="bg-red-500 px-3 py-4 md:py-4 rounded-r-md md:rounded-r-lg text-black w-fit z-50"
 								><div>
 									<MoveRight />
 								</div></button
@@ -262,20 +366,40 @@
 						</form>
 					</div>
 				{:else if response && response?.title}
-					<!-- {#if videoInfo} -->
-					<Playcard
-						on:loop={toggleVideoLooping}
-						{response}
-						{youtubeLink}
-						{playVideoAsAudio}
-						bind:playing
-						bind:buffering
-					/>
-					<Visualizer
-						on:seek={(event) => seekToPercentage(event)}
-						bind:duration
-						bind:playedPercentage
-					/>
+					{#if $playlist}
+						<!-- {#if videoInfo} -->
+						<PlayListPlayer
+							on:loop={toggleVideoLooping}
+							{response}
+							{youtubeLink}
+							playVideoAsAudio={playAudio}
+							{fetchVideo}
+							bind:playing
+							bind:buffering
+						/>
+						<Visualizer
+							on:seek={(event) => seekToPercentage(event)}
+							bind:duration
+							bind:playedPercentage
+							bind:buffering
+						/>
+					{:else}
+						<Playcard
+							on:loop={toggleVideoLooping}
+							{response}
+							{youtubeLink}
+							playVideoAsAudio={playAudio}
+							bind:playing
+							bind:buffering
+						/>
+
+						<Visualizer
+							on:seek={(event) => seekToPercentage(event)}
+							bind:duration
+							bind:playedPercentage
+							bind:buffering
+						/>
+					{/if}
 				{/if}
 			</div>
 		</div>

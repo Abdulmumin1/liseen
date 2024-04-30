@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { HistoryIcon, PanelRightOpen, Play, Trash, X } from 'lucide-svelte';
 	import { saveToLocalStorage, key, readFromLocalStorage, clickOutside } from '$lib/index.js';
@@ -28,17 +28,20 @@
 	});
 
 	export let playing, buffering, getVideoTitle, loading, player, youtubeLink;
+	let playlist = getContext('playlist');
 
 	function play(link) {
 		closeRecent();
 
+		// if ($playlist) {
+		$playlist = false;
+		// }
 		playing = false;
 		buffering = false;
 		loading = true;
 		player = false;
 		youtubeLink = link;
 		document.getElementById('player')?.remove();
-
 		getVideoTitle(link);
 	}
 

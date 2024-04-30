@@ -1,11 +1,31 @@
 <script>
-	import { Pause, Play, Youtube, Loader2, PlusCircleIcon, Repeat2 } from 'lucide-svelte';
+	import {
+		Pause,
+		Play,
+		Youtube,
+		Loader2,
+		PlusCircleIcon,
+		Repeat2,
+		SkipForwardIcon,
+		ListVideo,
+		ListVideoIcon,
+		SkipBackIcon
+	} from 'lucide-svelte';
 	import { newState } from '$lib/index.js';
+
 	import { fly } from 'svelte/transition';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, getContext, onMount } from 'svelte';
+
+	import { getToast } from '$lib/index.js';
 	import { saveToLocalStorage, key, readFromLocalStorage } from '$lib/index.js';
 
-	export let response, playing, buffering, playVideoAsAudio, youtubeLink;
+	let playlist = getContext('playlist');
+	let currently_playing = getContext('currently_playing');
+	let toast = getToast();
+	// getContext
+
+	export let response, fetchVideo, playing, buffering, playVideoAsAudio, youtubeLink;
+
 	function removeObjectContainingItem(list, key, value) {
 		for (let i = 0; i < list.length; i++) {
 			const obj = list[i];
@@ -24,18 +44,49 @@
 
 	let repeat = false;
 
-	onMount(() => {
-		if (response.title) {
-			let record = readFromLocalStorage(key);
-			if (record) {
-				removeObjectContainingItem(record, 'title', response.title);
-			} else {
-				record = [];
-			}
-			let save = { title: response.title, url: youtubeLink, date: new Date() };
-			record = addToFrontOfList(record, save);
-			saveToLocalStorage(key, record);
+	function next() {
+		// const index = (element) => element == $currently_playing;
+		let current_index = $playlist.videoIds.indexOf($currently_playing);
+		// console.log($currently_playing, current_index);
+		let next_index = current_index + 1;
+		next_index = $playlist.videoIds.indexOf($playlist.videoIds[next_index]);
+
+		if (next_index > -1) {
+			let nex = $playlist.videoIds[next_index];
+			fetchVideo(nex);
+		} else {
+			$toast = { message: "Can't go any further :/" };
 		}
+	}
+
+	function previous() {
+		// const index = (element) => element == $currently_playing;
+		let current_index = $playlist.videoIds.indexOf($currently_playing);
+		// console.log($currently_playing, current_index);
+		let prev_index = current_index - 1;
+		prev_index = $playlist.videoIds.indexOf($playlist.videoIds[prev_index]);
+		// console.log(next);
+
+		if (prev_index > -1) {
+			let prev = $playlist.videoIds[prev_index];
+			fetchVideo(prev);
+		} else {
+			$toast = { message: "Can't go any further :/" };
+		}
+	}
+
+	onMount(() => {
+		// if (response.title) {
+		// 	let record = readFromLocalStorage(key);
+		// 	if (record) {
+		// 		removeObjectContainingItem(record, 'title', response.title);
+		// 	} else {
+		// 		record = [];
+		// 	}
+		// 	let save = { title: response.title, url: youtubeLink, date: new Date() };
+		// 	record = addToFrontOfList(record, save);
+		// 	saveToLocalStorage(key, record);
+		// }
 	});
 
 	let dispatcher = createEventDispatcher();
@@ -47,30 +98,43 @@
 
 <div class="w-full gap-2 p-2 flex flex-col" transition:fly={{ y: 300 }}>
 	<div class="text-sm flex gap-1 items-center justify-center">
-		<Youtube />
-		{response?.title ?? response}
+		<ListVideoIcon />
+		{response?.title}
 	</div>
-	{#if response.thumbnails}
+
+	{#if response?.thumbnails}
 		<div class="relative">
 			<div class="blub relative">
 				<!-- style="background-image: url({response.thumbnails.default.url}); height:360px;" -->
-				<img src={response.thumbnails.high.url} alt="" srcset="" class="relative z-10 rounded-xl" />
+				<img
+					src={response?.thumbnails?.high?.url}
+					alt=""
+					srcset=""
+					class="relative z-10 rounded-xl"
+				/>
 			</div>
 		</div>
 	{/if}
 	<div class=" w-full px-4 flex justify-center items-center gap-2">
-		{#if response.title}
+		{#if response?.title}
 			<button
 				on:click={() => {
 					newState.set(true);
 					playing = false;
 					buffering = false;
+					$playlist = false;
 					document.getElementById('player')?.remove();
 				}}
 				class="bg-stone-900 hover:w-fit hover:px-2 focus:px-2 focus:w-fit group hover:scale-110 hover:rounded-xl transition-all duration-100 w-10 h-10 rounded-full flex items-center justify-center text-red-500"
 				><PlusCircleIcon /><span class="group-hover:flex group-focus:flex hidden">&nbsp;New</span
 				></button
 			>
+			<button
+				on:click={previous}
+				class="bg-stone-900 hover:scale-110 hover:rounded-xl transition-all duration-100 w-10 h-10 rounded-full flex items-center justify-center text-red-500"
+				><SkipBackIcon /></button
+			>
+
 			<button
 				on:click={playVideoAsAudio}
 				class="bg-red-500 w-16 h-16 rounded-lg text-black flex items-center justify-center"
@@ -85,6 +149,13 @@
 					<div class="animate-spin"><Loader2 /></div>
 				{/if}
 			</button>
+
+			<button
+				on:click={next}
+				class="bg-stone-900 hover:scale-110 hover:rounded-xl transition-all duration-100 w-10 h-10 rounded-full flex items-center justify-center text-red-500"
+				><SkipForwardIcon /></button
+			>
+
 			<button
 				on:click={() => {
 					// newState.set(true);
