@@ -137,11 +137,13 @@
 	onMount(() => {
 		coords.subscribe((current) => {
 			// if ()
-			if (!isDragging && !wait && playedPercentage <= 100) {
-				thumb.style.left = `${playedPercentage}%`;
-				// console.log('updated');
-			} else {
-				thumb.style.left = `${current.x}px`;
+			if (thumb) {
+				if (!isDragging && !wait && playedPercentage <= 100) {
+					thumb.style.left = `${playedPercentage}%`;
+					// console.log('updated');
+				} else {
+					thumb.style.left = `${current.x}px`;
+				}
 			}
 		});
 	});
