@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	export let duration, playedPercentage, buffering;
 
 	import { spring } from 'svelte/motion';
@@ -146,6 +146,10 @@
 				}
 			}
 		});
+	});
+
+	onDestroy(() => {
+		coords.unsubscribe();
 	});
 
 	function formatDuration(durationInSeconds) {
