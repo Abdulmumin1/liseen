@@ -118,12 +118,14 @@
 		y: 0
 	});
 
+	let played = 0;
+	let remaining = null;
 	$: {
-		if (playedPercentage) {
-			// console.log(playedPercentage);
-			// if (!wait && !isDragging) {
-			// 	// thumb.style.left = `${playedPercentage}%`;
-			// }
+		if (playedPercentage && duration) {
+			played = parseInt(duration * (playedPercentage / 100));
+			remaining = duration - played;
+
+			console.log(played, remaining);
 			coords.update(() => {
 				return { x: playedPercentage, y: 0 };
 			});
@@ -135,21 +137,19 @@
 	}
 
 	onMount(() => {
-		coords.subscribe((current) => {
+		const unsubscribe = coords.subscribe((current) => {
 			// if ()
 			if (thumb) {
 				if (!isDragging && !wait && playedPercentage <= 100) {
 					thumb.style.left = `${playedPercentage}%`;
 					// console.log('updated');
-				} else {
+				} else if (playedPercentage <= 100) {
 					thumb.style.left = `${current.x}px`;
 				}
 			}
 		});
-	});
 
-	onDestroy(() => {
-		coords.unsubscribe();
+		return unsubscribe();
 	});
 
 	function formatDuration(durationInSeconds) {
@@ -181,6 +181,9 @@
 	on:click={click}
 >
 	<!-- <span class="d absolute bottom-0">0:00</span> -->
+	<span class="duration text-[11px] text-red-500 mx-1 select-none absolute left-0 z-50 bottom-0"
+		>{formatDuration(played)}</span
+	>
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"
 		><path
 			class="fill-red-500"
@@ -201,14 +204,19 @@
 		on:touchend={handleMouseup}
 	></div>
 	<!-- style="left: {isDragging && !wait ? $coords.x : playedPercentage}%;" -->
-	<span class="text-[11px] text-red-950 mx-1 select-none absolute right-0 bottom-0"
-		>{formatDuration(duration)}</span
+	<span class="duration text-[11px] text-red-950 mx-1 select-none absolute right-0 bottom-0"
+		>{formatDuration(remaining ?? duration)}</span
 	>
 </div>
 
 <!-- </div> -->
 
 <style>
+	.duration {
+		mix-blend-mode: color-burn;
+		color: black;
+		font-size: 10px;
+	}
 	.af {
 		overflow: hidden;
 	}
