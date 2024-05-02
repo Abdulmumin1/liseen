@@ -69,7 +69,8 @@
 		if (!wait) {
 			let newPos;
 			let stepSize = 2;
-
+			// finally:
+			// console.log(thumb.style.left);
 			// console.log(parseInt(thumb.style.left.replace('px')));
 
 			switch (e.key) {
@@ -122,7 +123,7 @@
 	let remaining = null;
 	$: {
 		if (playedPercentage && duration) {
-			played = parseInt(duration * (playedPercentage / 100));
+			played = Math.floor(duration * (playedPercentage / 100)) + 2;
 			remaining = duration - played;
 
 			coords.update(() => {
@@ -131,12 +132,14 @@
 		}
 	}
 
+	let unsubscribe;
+
 	onMount(() => {
-		const unsubscribe = coords.subscribe((current) => {
+		unsubscribe = coords.subscribe((current) => {
 			// if ()
 			if (thumb) {
 				if (!isDragging && !wait && playedPercentage <= 100) {
-					thumb.style.left = `${playedPercentage}%`;
+					thumb.style.left = `${rangeSlider.offsetWidth * (playedPercentage / 100)}px`;
 					// console.log('updated');
 				} else if (playedPercentage <= 100) {
 					thumb.style.left = `${current.x}px`;
@@ -144,11 +147,16 @@
 			}
 		});
 
-		return () => {
-			unsubscribe();
-		};
+		// return () => {
+		// 	unsubscribe();
+		// };
 	});
 
+	onDestroy(() => {
+		if (unsubscribe) {
+			unsubscribe();
+		}
+	});
 	function formatDuration(durationInSeconds) {
 		const hours = Math.floor(durationInSeconds / 3600);
 		const minutes = Math.floor((durationInSeconds % 3600) / 60);
