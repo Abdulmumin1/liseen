@@ -125,7 +125,7 @@
 			played = parseInt(duration * (playedPercentage / 100));
 			remaining = duration - played;
 
-			console.log(played, remaining);
+			// console.log(played, remaining);
 			coords.update(() => {
 				return { x: playedPercentage, y: 0 };
 			});
