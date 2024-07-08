@@ -36,7 +36,7 @@
 	}
 
 	function handleTouchMove(e) {
-		e.preventDefault(); // Prevent default touch event behavior
+		e.preventDefault();
 		const posX = e.touches[0].clientX - rangeSlider.getBoundingClientRect().left;
 		const newPos = Math.min(Math.max(posX, 0), rangeSlider.offsetWidth);
 		if (isDragging && !wait) {
@@ -69,9 +69,6 @@
 		if (!wait) {
 			let newPos;
 			let stepSize = 2;
-			// finally:
-			// console.log(thumb.style.left);
-			// console.log(parseInt(thumb.style.left.replace('px')));
 
 			switch (e.key) {
 				case 'ArrowLeft':
@@ -120,11 +117,10 @@
 	});
 
 	let played = 0;
-	let remaining = null;
+
 	$: {
 		if (playedPercentage && duration) {
 			played = Math.floor(duration * (playedPercentage / 100)) + 2;
-			remaining = duration - played;
 
 			coords.update(() => {
 				return { x: playedPercentage, y: 0 };
@@ -147,9 +143,11 @@
 			}
 		});
 
-		// return () => {
-		// 	unsubscribe();
-		// };
+		window.addEventListener('keydown', handleKeyDown);
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+		};
 	});
 
 	onDestroy(() => {
@@ -178,7 +176,7 @@
 	aria-valuemax="100"
 	aria-valuenow={playedPercentage}
 	role="slider"
-	on:keydown={handleKeyDown}
+	on:keydown={() => {}}
 	tabindex="0"
 	on:mousemove={handleMouseMove}
 	on:touchmove={handleTouchMove}
@@ -210,11 +208,9 @@
 	></div>
 	<!-- style="left: {isDragging && !wait ? $coords.x : playedPercentage}%;" -->
 	<span class="duration text-[11px] text-red-950 mx-1 select-none absolute right-0 bottom-0"
-		>{formatDuration(remaining ?? duration)}</span
+		>{formatDuration(duration)}</span
 	>
 </div>
-
-<!-- </div> -->
 
 <style>
 	.duration {

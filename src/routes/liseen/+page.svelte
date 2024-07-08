@@ -283,6 +283,14 @@
 		// playing = true;
 	}
 
+	function handleKeyDown(e) {
+		switch (e.key) {
+			case ' ':
+				playAudio();
+				return;
+		}
+	}
+
 	onMount(() => {
 		winWidth = window.innerWidth;
 
@@ -290,23 +298,24 @@
 			winWidth = window.innerWidth;
 		});
 
-		// Listen for visibility change events
+		window.addEventListener('keydown', handleKeyDown);
+
 		document.addEventListener('visibilitychange', function () {
 			if (document.visibilityState === 'hidden') {
-				// Document is not visible (e.g., minimized)
 				if (player) {
 					const playerState = player.getPlayerState();
 					if (playerState != YT.PlayerState.PLAYING && playing) {
 						player.playVideo();
 					}
 				}
-
-				console.log('Window is minimized or not visible');
 			} else {
 				// Document is visible
-				console.log('Window is visible');
 			}
 		});
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+		};
 	});
 
 	function seekToPercentage(percentage) {
@@ -326,9 +335,6 @@
 		let isLooping = event.detail.repeat;
 		looping = isLooping;
 	}
-
-	// setContext('playing', playing)
-	// setContext{''}
 </script>
 
 <div class="flex justify-center h-screen overflow-hidden">
